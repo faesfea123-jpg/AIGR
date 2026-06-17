@@ -4,7 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AI 戀愛物語</title>
-<script src="characters.js">
+<script src="characters.js"></script>
+<script>
 // ══════════════════════════════════════════════════════
 // 劇情系統
 // ══════════════════════════════════════════════════════
@@ -392,11 +393,6 @@ body { font-family:-apple-system,'Helvetica Neue',sans-serif; background:#000; d
 .home-bg-overlay { position:absolute; inset:0; background:linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, transparent 25%, transparent 55%, rgba(0,0,0,0.7) 80%, rgba(0,0,0,0.9) 100%); z-index:1; pointer-events:none; }
 .home-bg-period { position:absolute; inset:0; z-index:1; pointer-events:none; transition:background 1s; }
 
-/* 角色切換箭頭 */
-.home-char-arrow { position:absolute; top:50%; transform:translateY(-50%); background:rgba(0,0,0,0.45); backdrop-filter:blur(8px); border:0.5px solid rgba(255,255,255,0.18); border-radius:50%; width:38px; height:38px; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:9; font-size:18px; color:#fff; transition:background 0.2s; }
-.home-char-arrow:hover { background:rgba(244,114,182,0.35); }
-.home-char-arrow-left { left:10px; }
-.home-char-arrow-right { right:10px; }
 
 /* 頂部狀態列 */
 .home-topbar { position:absolute; top:0; left:0; right:0; padding:48px 14px 12px; display:flex; align-items:center; gap:6px; z-index:10; background:linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, transparent 100%); }
@@ -645,15 +641,13 @@ body { font-family:-apple-system,'Helvetica Neue',sans-serif; background:#000; d
     <img id="homeCharBg" src="" alt=""
          style="position:absolute;bottom:130px;left:50%;transform:translateX(-50%);height:72%;object-fit:contain;object-position:bottom center;z-index:2;transition:opacity 0.4s ease" />
 
-    <!-- 角色切換箭頭（PC 用滑鼠點擊較方便） -->
-    <button class="home-char-arrow home-char-arrow-left" onclick="homeSwitchChar(-1)">‹</button>
-    <button class="home-char-arrow home-char-arrow-right" onclick="homeSwitchChar(1)">›</button>
 
     <!-- 頂部 -->
     <div class="home-topbar">
       <div class="home-stat-pill">🔋 <span id="homePoints">100</span> <span class="home-stat-plus">+</span></div>
       <div class="home-stat-pill">🪙 <span id="homeCoins">0</span> <span class="home-stat-plus">+</span></div>
       <div class="home-topbar-icons">
+        <div class="home-icon-btn" onclick="showCharSwitchPanel()" title="切換角色">👥</div>
         <div class="home-icon-btn" onclick="showToast('設定開發中')">⚙️</div>
       </div>
     </div>
@@ -843,6 +837,13 @@ body { font-family:-apple-system,'Helvetica Neue',sans-serif; background:#000; d
       <div style="font-size:40px">🍸</div>
       <div><div style="font-size:16px;font-weight:700;color:#fff">推酒杯</div><div style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:4px">3 輪 PK，跟她比準度！</div></div>
     </div>
+  </div>
+
+  <!-- 切換角色視窗 -->
+  <div id="charSwitchPanel" style="position:absolute;inset:0;background:rgba(0,0,0,0.88);backdrop-filter:blur(16px);z-index:50;display:none;flex-direction:column;padding:60px 20px 40px;gap:10px;overflow-y:auto">
+    <div style="font-size:18px;font-weight:700;color:#fff;text-align:center">💕 切換角色</div>
+    <button style="position:absolute;top:54px;right:20px;background:rgba(255,255,255,0.1);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px" onclick="document.getElementById('charSwitchPanel').style.display='none'">✕</button>
+    <div id="charSwitchList" style="display:flex;flex-direction:column;gap:10px;margin-top:8px"></div>
   </div>
 
   <!-- 補充點數面板 -->
@@ -1217,29 +1218,37 @@ function homeSwitchChar(dir) {
   }
 }
 
-function initHomeSwipe() {
-  const bg = document.getElementById('homeCharBg');
-  if (!bg || bg._swipeInit) return;
-  bg._swipeInit = true;
-  let startX = 0, startY = 0;
-  const el = document.getElementById('homeScreen');
-  el.addEventListener('touchstart', e => {
-    startX = e.touches[0].clientX;
-    startY = e.touches[0].clientY;
-  }, { passive: true });
-  el.addEventListener('touchend', e => {
-    const dx = e.changedTouches[0].clientX - startX;
-    const dy = Math.abs(e.changedTouches[0].clientY - startY);
-    if (Math.abs(dx) > 50 && dy < 60) homeSwitchChar(dx < 0 ? 1 : -1);
-  }, { passive: true });
-  // 滑鼠拖曳（桌面測試用）
-  let mouseDown = false;
-  el.addEventListener('mousedown', e => { mouseDown=true; startX=e.clientX; });
-  el.addEventListener('mouseup', e => {
-    if(!mouseDown) return; mouseDown=false;
-    const dx = e.clientX - startX;
-    if(Math.abs(dx) > 40) homeSwitchChar(dx < 0 ? 1 : -1);
+function showCharSwitchPanel() {
+  const list = document.getElementById('charSwitchList');
+  list.innerHTML = '';
+  CHAR_KEYS.forEach(k => {
+    const def = CHARACTERS[k];
+    const c = gs.chars[k];
+    const lv = getLevel(c.affection);
+    const isCurrent = k === gs.currentChar;
+    const item = document.createElement('div');
+    item.style.cssText = `display:flex;align-items:center;gap:14px;background:${isCurrent?'rgba(244,114,182,0.18)':'rgba(255,255,255,0.07)'};border:0.5px solid ${isCurrent?'rgba(244,114,182,0.45)':'rgba(255,255,255,0.12)'};border-radius:16px;padding:12px 14px;cursor:pointer`;
+    item.onclick = () => selectCharFromSwitch(k);
+    item.innerHTML = `
+      <div style="width:52px;height:52px;border-radius:50%;overflow:hidden;flex-shrink:0;border:2px solid rgba(255,182,193,0.5)"><img src="${def.imagePath}daily.png" style="width:100%;height:100%;object-fit:cover;object-position:top" alt="${def.name}"></div>
+      <div style="flex:1">
+        <div style="font-size:15px;font-weight:700;color:#fff">${def.name}${isCurrent?'　·　目前角色':''}</div>
+        <div style="font-size:11px;color:#fda4af;margin-top:2px">Lv.${lv.lv} ${lv.name}　·　好感度 ${c.affection}</div>
+      </div>
+      ${isCurrent?'<div style="font-size:18px;color:#f472b6">✓</div>':''}
+    `;
+    list.appendChild(item);
   });
+  document.getElementById('charSwitchPanel').style.display = 'flex';
+}
+
+function selectCharFromSwitch(key) {
+  if (key !== gs.currentChar) {
+    gs.currentChar = key;
+    save();
+    updateHomeUI();
+  }
+  document.getElementById('charSwitchPanel').style.display = 'none';
 }
 
 function updateHomeUI() {
@@ -1283,8 +1292,6 @@ function updateHomeUI() {
   generateHomeBubble();
   // 角色 UI
   updateHomeCharUI();
-  // 初始化滑動
-  initHomeSwipe();
 }
 
 function generateHomeBubble() {
@@ -1761,8 +1768,6 @@ function endCatchGame() { if(catchTimer)clearInterval(catchTimer); if(catchAnimF
 // 推酒杯
 // ══════════════════════════════
 let pgState=null, pgAnimFrame=null;
-const PG_BG_IMG=new Image(); PG_BG_IMG.src='images/bg/bar.png';
-const PG_GLASS_IMG=new Image(); PG_GLASS_IMG.src='images/games/glass.png';
 
 function startPushGlass() {
   document.getElementById('gameSelectPanel').style.display='none';
@@ -1844,8 +1849,7 @@ function startPushGlass() {
 
   function draw(){
     ctx.clearRect(0,0,W,H);
-    if(PG_BG_IMG.complete&&PG_BG_IMG.naturalWidth){ ctx.drawImage(PG_BG_IMG,0,0,W,H); ctx.fillStyle='rgba(20,12,6,0.35)'; ctx.fillRect(0,0,W,H); }
-    else{ ctx.fillStyle='#2c1d11'; ctx.fillRect(0,0,W,H); }
+    ctx.fillStyle='#2c1d11'; ctx.fillRect(0,0,W,H);
 
     ZONES.forEach(z=>{
       ctx.fillStyle=z.color+'22'; ctx.fillRect(0,z.yMin,W,z.yMax-z.yMin);
@@ -1864,12 +1868,9 @@ function startPushGlass() {
 
     const g=pgState.glass;
     ctx.shadowColor='rgba(0,0,0,0.5)'; ctx.shadowBlur=10; ctx.shadowOffsetY=6;
-    if(PG_GLASS_IMG.complete&&PG_GLASS_IMG.naturalWidth){ ctx.drawImage(PG_GLASS_IMG,g.x-RADIUS,g.y-RADIUS,RADIUS*2,RADIUS*2); }
-    else{
-      ctx.beginPath(); ctx.arc(g.x,g.y,RADIUS,0,Math.PI*2); ctx.fillStyle='rgba(255,255,255,0.2)'; ctx.fill();
-      ctx.strokeStyle='#fff'; ctx.lineWidth=3; ctx.stroke();
-      ctx.beginPath(); ctx.arc(g.x,g.y,RADIUS-7,0,Math.PI*2); ctx.fillStyle=g.owner==='player'?'#1e90ff':'#ff6b81'; ctx.fill();
-    }
+    ctx.beginPath(); ctx.arc(g.x,g.y,RADIUS,0,Math.PI*2); ctx.fillStyle='rgba(255,255,255,0.2)'; ctx.fill();
+    ctx.strokeStyle='#fff'; ctx.lineWidth=3; ctx.stroke();
+    ctx.beginPath(); ctx.arc(g.x,g.y,RADIUS-7,0,Math.PI*2); ctx.fillStyle=g.owner==='player'?'#1e90ff':'#ff6b81'; ctx.fill();
     ctx.shadowBlur=0; ctx.shadowOffsetY=0;
   }
 
