@@ -542,6 +542,20 @@ body { font-family:-apple-system,'Helvetica Neue',sans-serif; background:#000; d
 /* 接物品 */
 #catchScreen { background:#0a0a14; flex-direction:column; }
 
+/* 課金儲值卡片 */
+.recharge-card { position:relative; display:flex; align-items:center; gap:14px; background:rgba(255,255,255,0.07); border:0.5px solid rgba(255,255,255,0.12); border-radius:16px; padding:14px 16px; cursor:pointer; transition:transform 0.15s,background 0.15s; }
+.recharge-card:active { transform:scale(0.97); background:rgba(255,255,255,0.11); }
+.recharge-best { border:0.5px solid rgba(250,204,21,0.45); background:rgba(250,204,21,0.07); }
+.recharge-icon { font-size:26px; flex-shrink:0; width:36px; text-align:center; }
+.recharge-info { flex:1; min-width:0; }
+.recharge-name { font-size:14px; font-weight:600; color:#fff; }
+.recharge-amt { font-size:12px; color:#fda4af; margin-top:3px; }
+.recharge-price { font-size:14px; font-weight:700; color:#fff; background:linear-gradient(135deg,#e879f9,#f472b6); padding:6px 12px; border-radius:10px; flex-shrink:0; }
+.recharge-tag { position:absolute; top:-8px; left:14px; background:#f472b6; color:#fff; font-size:10px; font-weight:700; padding:2px 8px; border-radius:6px; letter-spacing:0.5px; }
+.recharge-tag-best { background:linear-gradient(135deg,#fbbf24,#f59e0b); }
+.recharge-card.purchased { opacity:0.4; pointer-events:none; }
+.recharge-card.purchased .recharge-price { background:rgba(255,255,255,0.15); }
+
 @keyframes fadeUp { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
 @keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-4px)} }
 .dot { width:5px; height:5px; background:rgba(255,255,255,0.4); border-radius:50%; animation:bounce 1.2s infinite; }
@@ -850,7 +864,7 @@ body { font-family:-apple-system,'Helvetica Neue',sans-serif; background:#000; d
   <div id="pointsPanel" style="position:absolute;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(16px);z-index:50;display:none;flex-direction:column;padding:60px 20px 40px;gap:12px">
     <div style="font-size:18px;font-weight:700;color:#fff;text-align:center">🔋 補充點數</div>
     <button style="position:absolute;top:54px;right:20px;background:rgba(255,255,255,0.1);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px" onclick="document.getElementById('pointsPanel').style.display='none'">✕</button>
-    <div style="font-size:12px;color:rgba(255,255,255,0.4);text-align:center">目前點數：<span id="panelPoints">0</span> / 200</div>
+    <div style="font-size:12px;color:rgba(255,255,255,0.4);text-align:center">目前點數：<span id="panelPoints">0</span>（一般上限200，課金儲值可超過上限）</div>
     <div onclick="claimDailyBonus()" style="display:flex;align-items:center;gap:14px;background:rgba(255,255,255,0.07);border:0.5px solid rgba(255,255,255,0.12);border-radius:16px;padding:14px 16px;cursor:pointer;margin-top:8px">
       <div style="font-size:28px">📅</div>
       <div><div style="font-size:14px;font-weight:600;color:#fff">每日登入獎勵</div><div style="font-size:11px;color:#fda4af;margin-top:3px">+50 點（每天一次）</div></div>
@@ -859,9 +873,52 @@ body { font-family:-apple-system,'Helvetica Neue',sans-serif; background:#000; d
       <div style="font-size:28px">📺</div>
       <div><div style="font-size:14px;font-weight:600;color:#fff">觀看廣告</div><div style="font-size:11px;color:#fda4af;margin-top:3px">+10 點</div></div>
     </div>
-    <div onclick="showToast('💳 課金功能開發中')" style="display:flex;align-items:center;gap:14px;background:rgba(255,255,255,0.07);border:0.5px solid rgba(244,114,182,0.2);border-radius:16px;padding:14px 16px;cursor:pointer">
+    <div onclick="openRechargePanel()" style="display:flex;align-items:center;gap:14px;background:rgba(255,255,255,0.07);border:0.5px solid rgba(244,114,182,0.2);border-radius:16px;padding:14px 16px;cursor:pointer">
       <div style="font-size:28px">💳</div>
       <div><div style="font-size:14px;font-weight:600;color:#fff">課金補充</div><div style="font-size:11px;color:#fda4af;margin-top:3px">立即獲得大量點數</div></div>
+    </div>
+  </div>
+
+  <!-- 課金儲值面板（示意，未串接真實金流） -->
+  <div id="rechargePanel" style="position:absolute;inset:0;background:rgba(0,0,0,0.92);backdrop-filter:blur(16px);z-index:55;display:none;flex-direction:column;padding:60px 20px 40px;gap:10px;overflow-y:auto">
+    <div style="font-size:18px;font-weight:700;color:#fff;text-align:center">💳 體力儲值</div>
+    <button style="position:absolute;top:54px;right:20px;background:rgba(255,255,255,0.1);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px" onclick="document.getElementById('rechargePanel').style.display='none'">✕</button>
+    <div style="font-size:11px;color:rgba(255,255,255,0.35);text-align:center;margin-bottom:4px">儲值取得的體力可超過上限儲存・僅供示意，未串接真實金流</div>
+    <div style="font-size:11px;color:#fda4af;text-align:center;margin-bottom:6px">今日已儲值：NT$<span id="rechargeTodaySpend">0</span>・每個檔次每天限購1次</div>
+
+    <div class="recharge-card" id="rechargeCard-small" onclick="purchaseStaminaPack('small')">
+      <div class="recharge-icon">🔋</div>
+      <div class="recharge-info"><div class="recharge-name">體力小包</div><div class="recharge-amt">+50 🔋</div></div>
+      <div class="recharge-price">NT$30</div>
+    </div>
+    <div class="recharge-card" id="rechargeCard-medium" onclick="purchaseStaminaPack('medium')">
+      <div class="recharge-icon">🔋</div>
+      <div class="recharge-info"><div class="recharge-name">體力中包</div><div class="recharge-amt">+160 🔋</div></div>
+      <div class="recharge-price">NT$90</div>
+    </div>
+    <div class="recharge-card" id="rechargeCard-large" onclick="purchaseStaminaPack('large')">
+      <div class="recharge-tag">人氣</div>
+      <div class="recharge-icon">🔋</div>
+      <div class="recharge-info"><div class="recharge-name">體力大包</div><div class="recharge-amt">+280 🔋</div></div>
+      <div class="recharge-price">NT$150</div>
+    </div>
+    <div class="recharge-card" id="rechargeCard-value" onclick="purchaseStaminaPack('value')">
+      <div class="recharge-tag">+20% 超值</div>
+      <div class="recharge-icon">💎</div>
+      <div class="recharge-info"><div class="recharge-name">超值體力包</div><div class="recharge-amt">+600 🔋</div></div>
+      <div class="recharge-price">NT$300</div>
+    </div>
+    <div class="recharge-card" id="rechargeCard-deluxe" onclick="purchaseStaminaPack('deluxe')">
+      <div class="recharge-tag">+30% 超值・推薦</div>
+      <div class="recharge-icon">💎</div>
+      <div class="recharge-info"><div class="recharge-name">豪華體力包</div><div class="recharge-amt">+1400 🔋</div></div>
+      <div class="recharge-price">NT$650</div>
+    </div>
+    <div class="recharge-card recharge-best" id="rechargeCard-supreme" onclick="purchaseStaminaPack('supreme')">
+      <div class="recharge-tag recharge-tag-best">+45% 超值・最划算</div>
+      <div class="recharge-icon">👑</div>
+      <div class="recharge-info"><div class="recharge-name">至尊體力包</div><div class="recharge-amt">+3200 🔋</div></div>
+      <div class="recharge-price">NT$1280</div>
     </div>
   </div>
 
@@ -991,6 +1048,16 @@ body { font-family:-apple-system,'Helvetica Neue',sans-serif; background:#000; d
 // 常數
 // ══════════════════════════════
 const POINTS_MAX = 200;
+const DAILY_AFFECTION_CAP = 150;     // 每位角色每日好感度總量上限（防止課金體力=無限好感度）
+const DAILY_SPEND_WARN = 1000;        // 當日累計儲值超過此金額（NT$）時，跳出二次確認提醒
+const RECHARGE_TIERS = {
+  small:   { price:30,   amount:50,   label:'體力小包' },
+  medium:  { price:90,   amount:160,  label:'體力中包' },
+  large:   { price:150,  amount:280,  label:'體力大包' },
+  value:   { price:300,  amount:600,  label:'超值體力包' },
+  deluxe:  { price:650,  amount:1400, label:'豪華體力包' },
+  supreme: { price:1280, amount:3200, label:'至尊體力包' },
+};
 const PERIOD_ORDER = ['morning','noon','afternoon','night'];
 const PERIODS = {
   morning:   { name:'早上', icon:'🌅', points:20 },
@@ -1025,12 +1092,13 @@ let gs = {
   currentPeriod:'morning', periodsUsed:[],
   currentChar:'kanon',      // 目前主介面顯示的角色（世界線）
   charSelectIdx:0,          // 角色選擇畫面的索引
+  todaySpend:0, todayPackPurchases:{},  // 課金保護：當日儲值金額 / 各檔次當日購買次數
   chars:{
-    kanon:  { affection:0, outfit:'daily', history:[], memory:[], emotions:[], dialogsToday:0, met:true,  cleared:false },
-    shion:  { affection:0, outfit:'daily', history:[], memory:[], emotions:[], dialogsToday:0, met:false, cleared:false },
-    nagi:   { affection:0, outfit:'daily', history:[], memory:[], emotions:[], dialogsToday:0, met:false, cleared:false },
-    yukino: { affection:0, outfit:'daily', history:[], memory:[], emotions:[], dialogsToday:0, met:false, cleared:false },
-    hina:   { affection:0, outfit:'daily', history:[], memory:[], emotions:[], dialogsToday:0, met:false, cleared:false },
+    kanon:  { affection:0, outfit:'daily', history:[], memory:[], emotions:[], dialogsToday:0, affGainToday:0, affCapNotified:false, met:true,  cleared:false },
+    shion:  { affection:0, outfit:'daily', history:[], memory:[], emotions:[], dialogsToday:0, affGainToday:0, affCapNotified:false, met:false, cleared:false },
+    nagi:   { affection:0, outfit:'daily', history:[], memory:[], emotions:[], dialogsToday:0, affGainToday:0, affCapNotified:false, met:false, cleared:false },
+    yukino: { affection:0, outfit:'daily', history:[], memory:[], emotions:[], dialogsToday:0, affGainToday:0, affCapNotified:false, met:false, cleared:false },
+    hina:   { affection:0, outfit:'daily', history:[], memory:[], emotions:[], dialogsToday:0, affGainToday:0, affCapNotified:false, met:false, cleared:false },
   },
   isTyping:false, currentEvent:null,
 };
@@ -1040,6 +1108,33 @@ function load() { const r=localStorage.getItem('aigf_v6'); if(!r) return false; 
 function getLevel(aff) { return LEVELS.find(l=>aff>=l.min&&aff<=l.max)||LEVELS[0]; }
 function curCharData() { return gs.chars[gs.currentChar]; }
 function curCharDef()  { return CHARACTERS[gs.currentChar]; }
+
+// 統一的好感度加減函式：所有「增加」好感度的地方都應該透過這裡，
+// 才能保證每位角色每天的好感度成長有上限（不管體力是免費賺的還是課金買的）。
+// 好感度的「減少」（負數delta）不受每日上限影響，照常扣減。
+function addAffection(charKey, rawDelta) {
+  const c = gs.chars[charKey];
+  if (!c) return 0;
+  let delta = rawDelta;
+  if (delta > 0) {
+    c.affGainToday = c.affGainToday || 0;
+    const remaining = Math.max(0, DAILY_AFFECTION_CAP - c.affGainToday);
+    delta = Math.min(delta, remaining);
+    c.affGainToday += delta;
+    if (delta < rawDelta && !c.affCapNotified) {
+      c.affCapNotified = true;
+      setTimeout(() => showToast('💭 她今天已經很滿足了，剩餘的好感度明天再繼續累積吧'), 500);
+    }
+  }
+  c.affection = Math.max(0, Math.min(9999, c.affection + delta));
+  return delta;
+}
+// 每天重置：好感度每日上限計數 + 課金每日保護用的計數
+function resetDailyCounters() {
+  Object.values(gs.chars).forEach(c => { c.dialogsToday = 0; c.affGainToday = 0; c.affCapNotified = false; });
+  gs.todaySpend = 0;
+  gs.todayPackPurchases = {};
+}
 
 // ══════════════════════════════
 // 畫面切換
@@ -1376,7 +1471,7 @@ function checkDailyLogin() {
     gs.periodsUsed = [];
     gs.currentPeriod = 'morning';
     if(!isFirst) gs.day += 1;
-    Object.values(gs.chars).forEach(c => c.dialogsToday = 0);
+    resetDailyCounters();
     save();
     if(!isFirst) setTimeout(() => showToast(`📅 Day ${gs.day} 開始！+50🔋 +20🪙`), 800);
   }
@@ -1392,7 +1487,7 @@ function advancePeriod() {
   } else {
     gs.day += 1; gs.currentPeriod = 'morning'; gs.periodsUsed = [];
     gs.points = Math.min(POINTS_MAX,(gs.points||0)+50); gs.coins += 20;
-    Object.values(gs.chars).forEach(c => c.dialogsToday = 0);
+    resetDailyCounters();
     showToast(`🌅 Day ${gs.day} 開始！+50🔋 +20🪙`);
   }
   save(); updateHomeUI();
@@ -1433,7 +1528,7 @@ function applyDevDay() {
   const val = parseInt(document.getElementById('settingsDayInput').value, 10);
   if (!val || val < 1) { showToast('請輸入有效天數'); return; }
   gs.day = val;
-  Object.values(gs.chars).forEach(c => c.dialogsToday = 0);
+  resetDailyCounters();
   save(); updateSettingsPanelInfo(); updateHomeUI();
   showToast(`📅 已跳至 Day ${val}`);
 }
@@ -1445,7 +1540,7 @@ function applyDevPeriod(period) {
 }
 function devAdvanceOneDay() {
   gs.day += 1; gs.currentPeriod = 'morning'; gs.periodsUsed = [];
-  Object.values(gs.chars).forEach(c => c.dialogsToday = 0);
+  resetDailyCounters();
   save(); updateSettingsPanelInfo(); updateHomeUI();
   showToast(`📅 已進入 Day ${gs.day}`);
 }
@@ -1453,6 +1548,51 @@ function resetPeriodsUsed() {
   gs.periodsUsed = [];
   save(); updateSettingsPanelInfo(); updateHomeUI();
   showToast('🔄 本日約會次數限制已清除');
+}
+
+// ══════════════════════════════
+// 課金儲值（示意，未串接真實金流）
+// ══════════════════════════════
+function openRechargePanel() {
+  updateRechargeCardStates();
+  document.getElementById('rechargePanel').style.display = 'flex';
+}
+function updateRechargeCardStates() {
+  document.getElementById('rechargeTodaySpend').textContent = gs.todaySpend || 0;
+  Object.keys(RECHARGE_TIERS).forEach(tierId => {
+    const card = document.getElementById('rechargeCard-' + tierId);
+    if (!card) return;
+    const bought = !!(gs.todayPackPurchases || {})[tierId];
+    card.classList.toggle('purchased', bought);
+    const priceEl = card.querySelector('.recharge-price');
+    if (priceEl) priceEl.textContent = bought ? '今日已購買' : `NT$${RECHARGE_TIERS[tierId].price}`;
+  });
+}
+function purchaseStaminaPack(tierId) {
+  const tier = RECHARGE_TIERS[tierId];
+  if (!tier) return;
+  gs.todayPackPurchases = gs.todayPackPurchases || {};
+  if (gs.todayPackPurchases[tierId]) { showToast('這個檔次今天已經買過了，明天再來吧！'); return; }
+
+  const projectedSpend = (gs.todaySpend || 0) + tier.price;
+  if (projectedSpend >= DAILY_SPEND_WARN) {
+    const ok = confirm(`你今天已經儲值 NT$${gs.todaySpend || 0}，這筆 NT$${tier.price} 會讓今天累積到 NT$${projectedSpend}。\n要繼續購買「${tier.label}」嗎？`);
+    if (!ok) return;
+  }
+
+  document.querySelectorAll('.recharge-card').forEach(c => c.style.pointerEvents = 'none');
+  showToast(`💳 模擬付款中… NT$${tier.price}`);
+  setTimeout(() => {
+    gs.points = (gs.points || 0) + tier.amount; // 課金取得的體力可超過上限儲存
+    gs.todaySpend = (gs.todaySpend || 0) + tier.price;
+    gs.todayPackPurchases[tierId] = true;
+    document.getElementById('panelPoints').textContent = gs.points;
+    save(); updateHomeUI();
+    document.getElementById('rechargePanel').style.display = 'none';
+    document.querySelectorAll('.recharge-card').forEach(c => c.style.pointerEvents = '');
+    updateRechargeCardStates();
+    showToast(`✅ 已購買${tier.label}，獲得 ${tier.amount} 🔋！`);
+  }, 900);
 }
 
 // ══════════════════════════════
@@ -1650,11 +1790,11 @@ async function handleEventDialog(playerText,quality,charKey,overrideDelta) {
   const ev=gs.currentEvent; const def=CHARACTERS[charKey]; const c=gs.chars[charKey];
   let delta=overrideDelta!==undefined?overrideDelta:(quality==='good'?15:quality==='neutral'?5:-5);
   const oldLv=getLevel(c.affection);
-  c.affection=Math.max(0,Math.min(9999,c.affection+delta));
+  const applied=addAffection(charKey,delta);
   const newLv=getLevel(c.affection);
   ev.totalDelta=(ev.totalDelta||0)+delta; ev.rounds=(ev.rounds||0)+1;
   document.getElementById('eventAffBadge').textContent=`好感度 ${c.affection}`;
-  if(delta>0) showToast(`💕 +${delta}`); else if(delta<0) showToast(`😔 ${delta}`);
+  if(applied>0) showToast(`💕 +${applied}`); else if(applied<0) showToast(`😔 ${applied}`);
   if(newLv.lv!==oldLv.lv&&newLv.unlock) setTimeout(()=>showToast(newLv.unlock),600);
   ev.dialogHistory=ev.dialogHistory||[];
   ev.dialogHistory.push({role:'user',content:playerText});
@@ -1667,7 +1807,7 @@ async function handleEventDialog(playerText,quality,charKey,overrideDelta) {
     updateEventGoalBar(ev.goal||'',ev.rounds,ev.maxRounds||4);
     if(isLastRound){
       const success=ev.totalDelta>=10;
-      if(success){c.affection=Math.min(9999,c.affection+20);showToast('🎯 目標達成！額外 +20好感');}
+      if(success){const bonus=addAffection(charKey,20); showToast(bonus>0?`🎯 目標達成！額外 +${bonus}好感`:'🎯 目標達成！（今日好感度已達上限）');}
       // 劇情旗標記錄
       if(ev.storyEventId) markStoryEventDone(charKey, ev.storyEventId, ev.specialFlag);
       // 結局觸發
@@ -1757,7 +1897,7 @@ async function sendChatMessage() {
     if(text.length>5){c.memory.push(text.substring(0,30));if(c.memory.length>20)c.memory.shift();}
     hideChatTyping(); addChatMsg('rou',def.name,reply);
     const oldLv=getLevel(c.affection);
-    c.affection=Math.max(0,Math.min(9999,c.affection+3+delta));
+    addAffection(gs.currentChar,3+delta);
     const newLv=getLevel(c.affection);
     const pct=Math.min(100,((c.affection-newLv.min)/(newLv.max-newLv.min+1))*100);
     document.getElementById('chatAffBar').style.width=pct+'%';
@@ -1771,8 +1911,8 @@ async function sendChatMessage() {
 async function sendGift(name,cost,aff) {
   if(gs.isTyping) return;
   if(gs.coins<cost){showToast(`金幣不足！需要 ${cost}🪙`);return;}
-  gs.coins-=cost; curCharData().affection=Math.max(0,Math.min(9999,curCharData().affection+aff));
-  showToast(`💕 好感度 +${aff}`); addChatMsg('user','',`送了${name} 🎁`);
+  gs.coins-=cost; const applied=addAffection(gs.currentChar,aff);
+  showToast(applied>0?`💕 好感度 +${applied}`:'💕 禮物送出了（今日好感度已達上限）'); addChatMsg('user','',`送了${name} 🎁`);
   gs.isTyping=true; showChatTyping();
   try {
     let reply=await callAI({apiKey:gs.apiKey,model:'llama-3.3-70b-versatile',max_tokens:150,system:getChatSystemPrompt(),messages:[{role:'user',content:`（${gs.playerName}送了${name}給${curCharDef().name}）`}]});
