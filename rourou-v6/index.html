@@ -648,7 +648,7 @@ body { font-family:-apple-system,'Helvetica Neue',sans-serif; background:#000; d
       <div class="home-stat-pill">🪙 <span id="homeCoins">0</span> <span class="home-stat-plus">+</span></div>
       <div class="home-topbar-icons">
         <div class="home-icon-btn" onclick="showCharSwitchPanel()" title="切換角色">👥</div>
-        <div class="home-icon-btn" onclick="showToast('設定開發中')">⚙️</div>
+        <div class="home-icon-btn" onclick="openSettingsPanel()" title="設定">⚙️</div>
       </div>
     </div>
 
@@ -862,6 +862,47 @@ body { font-family:-apple-system,'Helvetica Neue',sans-serif; background:#000; d
     <div onclick="showToast('💳 課金功能開發中')" style="display:flex;align-items:center;gap:14px;background:rgba(255,255,255,0.07);border:0.5px solid rgba(244,114,182,0.2);border-radius:16px;padding:14px 16px;cursor:pointer">
       <div style="font-size:28px">💳</div>
       <div><div style="font-size:14px;font-weight:600;color:#fff">課金補充</div><div style="font-size:11px;color:#fda4af;margin-top:3px">立即獲得大量點數</div></div>
+    </div>
+  </div>
+
+  <!-- 設定面板 -->
+  <div id="settingsPanel" style="position:absolute;inset:0;background:rgba(0,0,0,0.9);backdrop-filter:blur(16px);z-index:50;display:none;flex-direction:column;padding:60px 20px 40px;gap:14px;overflow-y:auto">
+    <div style="font-size:18px;font-weight:700;color:#fff;text-align:center">⚙️ 設定</div>
+    <button style="position:absolute;top:54px;right:20px;background:rgba(255,255,255,0.1);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px" onclick="document.getElementById('settingsPanel').style.display='none'">✕</button>
+
+    <div style="font-size:12px;color:rgba(255,255,255,0.4);text-align:center">目前狀態：Day <span id="settingsCurDay">1</span>｜<span id="settingsCurPeriod">早上</span></div>
+
+    <div style="background:rgba(255,255,255,0.06);border:0.5px solid rgba(255,255,255,0.12);border-radius:16px;padding:14px 16px">
+      <div style="font-size:13px;font-weight:700;color:#fda4af;margin-bottom:10px">🛠 測試工具（僅供開發測試）</div>
+
+      <div style="font-size:12px;color:rgba(255,255,255,0.6);margin-bottom:6px">跳到指定天數</div>
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <input id="settingsDayInput" type="number" min="1" max="9999" placeholder="例如：5" style="flex:1;background:rgba(255,255,255,0.09);border:0.5px solid rgba(244,114,182,0.3);border-radius:10px;padding:9px 12px;color:#fff;font-size:13px;outline:none" />
+        <button onclick="applyDevDay()" style="background:linear-gradient(135deg,#e879f9,#f472b6);border:none;border-radius:10px;padding:9px 16px;color:#fff;font-size:13px;font-weight:700;cursor:pointer">套用</button>
+      </div>
+
+      <div style="font-size:12px;color:rgba(255,255,255,0.6);margin-bottom:6px">切換時段</div>
+      <div style="display:flex;gap:6px;margin-bottom:14px">
+        <button onclick="applyDevPeriod('morning')" style="flex:1;background:rgba(255,255,255,0.07);border:0.5px solid rgba(255,255,255,0.12);border-radius:10px;padding:9px 0;color:#fff;font-size:12px;cursor:pointer">🌅 早上</button>
+        <button onclick="applyDevPeriod('noon')" style="flex:1;background:rgba(255,255,255,0.07);border:0.5px solid rgba(255,255,255,0.12);border-radius:10px;padding:9px 0;color:#fff;font-size:12px;cursor:pointer">☀️ 中午</button>
+        <button onclick="applyDevPeriod('afternoon')" style="flex:1;background:rgba(255,255,255,0.07);border:0.5px solid rgba(255,255,255,0.12);border-radius:10px;padding:9px 0;color:#fff;font-size:12px;cursor:pointer">🌆 下午</button>
+        <button onclick="applyDevPeriod('night')" style="flex:1;background:rgba(255,255,255,0.07);border:0.5px solid rgba(255,255,255,0.12);border-radius:10px;padding:9px 0;color:#fff;font-size:12px;cursor:pointer">🌙 晚上</button>
+      </div>
+
+      <div onclick="devAdvanceOneDay()" style="display:flex;align-items:center;gap:14px;background:rgba(255,255,255,0.07);border:0.5px solid rgba(255,255,255,0.12);border-radius:16px;padding:12px 16px;cursor:pointer;margin-bottom:10px">
+        <div style="font-size:24px">📅</div>
+        <div><div style="font-size:13px;font-weight:600;color:#fff">直接進入下一天</div><div style="font-size:11px;color:#fda4af;margin-top:2px">不用等現實時間過24小時</div></div>
+      </div>
+
+      <div onclick="resetPeriodsUsed()" style="display:flex;align-items:center;gap:14px;background:rgba(255,255,255,0.07);border:0.5px solid rgba(255,255,255,0.12);border-radius:16px;padding:12px 16px;cursor:pointer">
+        <div style="font-size:24px">🔄</div>
+        <div><div style="font-size:13px;font-weight:600;color:#fff">清除本日約會次數限制</div><div style="font-size:11px;color:#fda4af;margin-top:2px">恢復所有時段，可重複測試約會</div></div>
+      </div>
+    </div>
+
+    <div onclick="newGame()" style="display:flex;align-items:center;gap:14px;background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,80,80,0.25);border-radius:16px;padding:14px 16px;cursor:pointer">
+      <div style="font-size:24px">🗑️</div>
+      <div><div style="font-size:14px;font-weight:600;color:#fff">重置存檔</div><div style="font-size:11px;color:rgba(255,120,120,0.8);margin-top:2px">清空所有進度，重新開始</div></div>
     </div>
   </div>
 
@@ -1377,6 +1418,44 @@ function watchAd() {
 }
 
 // ══════════════════════════════
+// 設定面板（含測試工具：調整天數/時段）
+// ══════════════════════════════
+function openSettingsPanel() {
+  document.getElementById('settingsDayInput').value = gs.day || 1;
+  updateSettingsPanelInfo();
+  document.getElementById('settingsPanel').style.display = 'flex';
+}
+function updateSettingsPanelInfo() {
+  document.getElementById('settingsCurDay').textContent = gs.day || 1;
+  document.getElementById('settingsCurPeriod').textContent = (PERIODS[gs.currentPeriod] || PERIODS.morning).name;
+}
+function applyDevDay() {
+  const val = parseInt(document.getElementById('settingsDayInput').value, 10);
+  if (!val || val < 1) { showToast('請輸入有效天數'); return; }
+  gs.day = val;
+  Object.values(gs.chars).forEach(c => c.dialogsToday = 0);
+  save(); updateSettingsPanelInfo(); updateHomeUI();
+  showToast(`📅 已跳至 Day ${val}`);
+}
+function applyDevPeriod(period) {
+  if (!PERIODS[period]) return;
+  gs.currentPeriod = period;
+  save(); updateSettingsPanelInfo(); updateHomeUI();
+  showToast(`${PERIODS[period].icon} 已切換至${PERIODS[period].name}`);
+}
+function devAdvanceOneDay() {
+  gs.day += 1; gs.currentPeriod = 'morning'; gs.periodsUsed = [];
+  Object.values(gs.chars).forEach(c => c.dialogsToday = 0);
+  save(); updateSettingsPanelInfo(); updateHomeUI();
+  showToast(`📅 已進入 Day ${gs.day}`);
+}
+function resetPeriodsUsed() {
+  gs.periodsUsed = [];
+  save(); updateSettingsPanelInfo(); updateHomeUI();
+  showToast('🔄 本日約會次數限制已清除');
+}
+
+// ══════════════════════════════
 // 行動系統
 // ══════════════════════════════
 function goAction() {
@@ -1420,6 +1499,28 @@ async function goToLocation(loc) {
     showScreen('eventScreen');
     await generateWorkEvent(loc);
   }
+}
+
+// ══════════════════════════════
+// AI 呼叫工具（偵測/修復亂碼）
+// ══════════════════════════════
+// Groq 模型偶爾會在中文輸出中產生無效的 UTF-8 位元組（常見於 emoji 或罕見字附近），
+// 瀏覽器解碼後會變成「�」(U+FFFD)。這裡統一處理：偵測到亂碼就自動重試一次，
+// 重試後仍有殘留則直接濾除，避免畫面顯示破碎字元。
+function hasMojibake(text) { return typeof text === 'string' && text.indexOf('\uFFFD') !== -1; }
+function sanitizeAIText(text) {
+  if (typeof text !== 'string') return text;
+  return text.replace(/\uFFFD+/g, '').replace(/[ \t]{2,}/g, ' ').trim();
+}
+async function callAI(payload, retries = 1) {
+  let lastText = '';
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const res = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    const data = await res.json();
+    lastText = data.content?.[0]?.text || '';
+    if (!hasMojibake(lastText)) return lastText;
+  }
+  return sanitizeAIText(lastText); // 重試後仍有亂碼，濾除殘留字元
 }
 
 // ══════════════════════════════
@@ -1491,9 +1592,8 @@ async function generateEvent(loc, charKey) {
   }
   const prompt=`你是遊戲設計師，設計AI女友養成遊戲的相遇事件。場景：${loc.name}，時段：${period.name}，角色：${def.name}（${def.personality.split('\n')[0]}），玩家稱呼：${gs.playerName}，好感度：${c.affection}，是否初次相遇：${isFirstMeet}。設計相遇情境，JSON格式：{"goal":"目標","opening":"開場白","choices":[{"text":"選項A","quality":"good"},{"text":"選項B","quality":"neutral"}]}，只回傳JSON，不要emoji。`;
   try {
-    const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({apiKey:gs.apiKey,model:'llama-3.3-70b-versatile',max_tokens:300,system:'你是遊戲設計師，只回傳JSON，不要markdown，不要emoji。',messages:[{role:'user',content:prompt}]})});
-    const data=await res.json();
-    let text=(data.content?.[0]?.text||'').replace(/```json|```/g,'').trim();
+    let text=await callAI({apiKey:gs.apiKey,model:'llama-3.3-70b-versatile',max_tokens:300,system:'你是遊戲設計師，只回傳JSON，不要markdown，不要emoji。',messages:[{role:'user',content:prompt}]});
+    text=text.replace(/```json|```/g,'').trim();
     const event=JSON.parse(text);
     gs.currentEvent.goal=event.goal; gs.currentEvent.opening=event.opening;
     gs.currentEvent.dialogHistory.push({role:'assistant',content:event.opening});
@@ -1536,9 +1636,8 @@ async function handleFreeEventInput(charKey) {
   document.getElementById('eventChoices').innerHTML=''; addEventTyping();
   const def=CHARACTERS[charKey]; const c=gs.chars[charKey];
   try {
-    const judgeRes=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({apiKey:gs.apiKey,model:'llama-3.3-70b-versatile',max_tokens:80,system:'你是好感度判斷系統，只回傳JSON，不要其他文字。',messages:[{role:'user',content:`角色：${def.name}，個性：${def.personality.split('\n')[0]}\n情境：${gs.currentEvent?.opening||''}\n玩家說：${text}\n\n回傳：{"quality":"good/neutral/bad","delta":數字} delta範圍-10到20`}]})});
-    const judgeData=await judgeRes.json();
-    let jt=(judgeData.content?.[0]?.text||'{"quality":"neutral","delta":5}').replace(/```json|```/g,'').trim();
+    let jt=await callAI({apiKey:gs.apiKey,model:'llama-3.3-70b-versatile',max_tokens:80,system:'你是好感度判斷系統，只回傳JSON，不要其他文字。',messages:[{role:'user',content:`角色：${def.name}，個性：${def.personality.split('\n')[0]}\n情境：${gs.currentEvent?.opening||''}\n玩家說：${text}\n\n回傳：{"quality":"good/neutral/bad","delta":數字} delta範圍-10到20`}]});
+    jt=(jt||'{"quality":"neutral","delta":5}').replace(/```json|```/g,'').trim();
     const judge=JSON.parse(jt); const delta=Math.max(-10,Math.min(20,judge.delta||5));
     await handleEventDialog(text,judge.quality,charKey,delta);
   } catch { await handleEventDialog(text,'neutral',charKey,5); }
@@ -1561,9 +1660,8 @@ async function handleEventDialog(playerText,quality,charKey,overrideDelta) {
   ev.dialogHistory.push({role:'user',content:playerText});
   const isLastRound=ev.rounds>=ev.maxRounds;
   try {
-    const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({apiKey:gs.apiKey,model:'llama-3.3-70b-versatile',max_tokens:200,system:def.personality+`\n玩家稱呼：${gs.playerName}\n好感度：${c.affection}\n本次目標：${ev.goal||''}\n${isLastRound?'這是最後一輪，請給出收尾的道別回應。':''}`,messages:ev.dialogHistory})});
-    const data=await res.json();
-    let reply=(data.content?.[0]?.text||'…').replace(/\[EMOTION:.*?\]/g,'').trim();
+    let reply=await callAI({apiKey:gs.apiKey,model:'llama-3.3-70b-versatile',max_tokens:200,system:def.personality+`\n玩家稱呼：${gs.playerName}\n好感度：${c.affection}\n本次目標：${ev.goal||''}\n${isLastRound?'這是最後一輪，請給出收尾的道別回應。':''}\n（請用繁體中文自然對話，不要使用emoji或特殊符號）`,messages:ev.dialogHistory});
+    reply=(reply||'…').replace(/\[EMOTION:.*?\]/g,'').trim();
     ev.dialogHistory.push({role:'assistant',content:reply});
     removeEventTyping(); addEventMsg('rou',def.name,reply);
     updateEventGoalBar(ev.goal||'',ev.rounds,ev.maxRounds||4);
@@ -1587,9 +1685,8 @@ async function handleEventDialog(playerText,quality,charKey,overrideDelta) {
 async function generateNextChoices(charKey,lastReply) {
   const def=CHARACTERS[charKey]; const ev=gs.currentEvent;
   try {
-    const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({apiKey:gs.apiKey,model:'llama-3.3-70b-versatile',max_tokens:200,system:'你是遊戲設計師，只回傳JSON，不要markdown，不要emoji。',messages:[{role:'user',content:`角色${def.name}剛說：「${lastReply}」\n互動目標：${ev.goal||''}\n\n設計2個玩家回應選項：\n{"choices":[{"text":"選項A","quality":"good"},{"text":"選項B","quality":"neutral"}]}`}]})});
-    const data=await res.json();
-    let text=(data.content?.[0]?.text||'').replace(/```json|```/g,'').trim();
+    let text=await callAI({apiKey:gs.apiKey,model:'llama-3.3-70b-versatile',max_tokens:200,system:'你是遊戲設計師，只回傳JSON，不要markdown，不要emoji。',messages:[{role:'user',content:`角色${def.name}剛說：「${lastReply}」\n互動目標：${ev.goal||''}\n\n設計2個玩家回應選項：\n{"choices":[{"text":"選項A","quality":"good"},{"text":"選項B","quality":"neutral"}]}`}]});
+    text=text.replace(/```json|```/g,'').trim();
     const parsed=JSON.parse(text);
     renderChoices(parsed.choices,charKey);
   } catch { renderChoices([{text:'繼續聊聊吧',quality:'good'},{text:'這樣啊…',quality:'neutral'}],charKey); }
@@ -1639,7 +1736,7 @@ function hideChatTyping() { const el=document.getElementById('chatTyping'); if(e
 function getChatSystemPrompt() {
   const def=curCharDef(); const c=curCharData(); const lv=getLevel(c.affection);
   const mem=c.memory.slice(-5).join('；')||'無';
-  return `${def.personality}\n玩家稱呼：${gs.playerName}\n好感度：${c.affection}（Lv.${lv.lv} ${lv.name}）\n玩家記憶：${mem}\n【回覆末尾加上】[EMOTION:happy|DELTA:0]`;
+  return `${def.personality}\n玩家稱呼：${gs.playerName}\n好感度：${c.affection}（Lv.${lv.lv} ${lv.name}）\n玩家記憶：${mem}\n（請用繁體中文自然對話，不要使用emoji或特殊符號）\n【回覆末尾加上】[EMOTION:happy|DELTA:0]`;
 }
 
 async function sendChatMessage() {
@@ -1653,9 +1750,7 @@ async function sendChatMessage() {
   const c=curCharData(); const def=curCharDef();
   c.history.push({role:'user',content:text});
   try {
-    const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({apiKey:gs.apiKey,model:'llama-3.3-70b-versatile',max_tokens:300,system:getChatSystemPrompt(),messages:c.history})});
-    const data=await res.json();
-    let reply=data.content?.[0]?.text||''; let delta=0;
+    let reply=await callAI({apiKey:gs.apiKey,model:'llama-3.3-70b-versatile',max_tokens:300,system:getChatSystemPrompt(),messages:c.history}); let delta=0;
     const match=reply.match(/\[EMOTION:(\w+)\|DELTA:(\d+)\]/);
     if(match){delta=parseInt(match[2])||0;reply=reply.replace(match[0],'').trim();}
     c.history.push({role:'assistant',content:reply});
@@ -1680,9 +1775,8 @@ async function sendGift(name,cost,aff) {
   showToast(`💕 好感度 +${aff}`); addChatMsg('user','',`送了${name} 🎁`);
   gs.isTyping=true; showChatTyping();
   try {
-    const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({apiKey:gs.apiKey,model:'llama-3.3-70b-versatile',max_tokens:150,system:getChatSystemPrompt(),messages:[{role:'user',content:`（${gs.playerName}送了${name}給${curCharDef().name}）`}]})});
-    const data=await res.json();
-    let reply=(data.content?.[0]?.text||'謝謝你…').replace(/\[EMOTION:.*?\]/g,'').trim();
+    let reply=await callAI({apiKey:gs.apiKey,model:'llama-3.3-70b-versatile',max_tokens:150,system:getChatSystemPrompt(),messages:[{role:'user',content:`（${gs.playerName}送了${name}給${curCharDef().name}）`}]});
+    reply=(reply||'謝謝你…').replace(/\[EMOTION:.*?\]/g,'').trim();
     hideChatTyping(); addChatMsg('rou',curCharDef().name,reply);
   } catch { hideChatTyping(); addChatMsg('rou',curCharDef().name,'謝謝你…'); }
   gs.isTyping=false; save();
