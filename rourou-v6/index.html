@@ -521,6 +521,7 @@ body { font-family:-apple-system,'Helvetica Neue',sans-serif; background:#000; d
 .typing-bubble { background:rgba(255,255,255,0.1); backdrop-filter:blur(12px); border:0.5px solid rgba(255,255,255,0.18); border-radius:16px; border-bottom-left-radius:4px; padding:11px 14px; display:flex; gap:4px; align-items:center; }
 .unlock-banner { align-self:center; background:rgba(244,114,182,0.18); backdrop-filter:blur(8px); border:0.5px solid rgba(244,114,182,0.3); border-radius:20px; padding:5px 14px; font-size:11px; color:#fda4af; animation:fadeUp 0.3s ease; }
 .chat-bottom { position:absolute; bottom:0; left:0; right:0; z-index:10; padding:0 0 24px; }
+.chat-coins-bar { padding:6px 14px 0; text-align:right; font-size:11px; color:rgba(255,255,255,0.55); }
 .chat-gifts { padding:6px 12px; display:flex; gap:6px; overflow-x:auto; border-top:0.5px solid rgba(255,255,255,0.06); }
 .chat-gifts::-webkit-scrollbar { height:0; }
 .gift-btn { background:rgba(255,255,255,0.08); backdrop-filter:blur(8px); border:0.5px solid rgba(255,255,255,0.15); border-radius:16px; padding:5px 10px; color:rgba(255,255,255,0.8); font-size:11px; cursor:pointer; white-space:nowrap; }
@@ -555,6 +556,7 @@ body { font-family:-apple-system,'Helvetica Neue',sans-serif; background:#000; d
 .recharge-tag-best { background:linear-gradient(135deg,#fbbf24,#f59e0b); }
 .recharge-card.purchased { opacity:0.4; pointer-events:none; }
 .recharge-card.purchased .recharge-price { background:rgba(255,255,255,0.15); }
+.gift-price { background:linear-gradient(135deg,#fbbf24,#f59e0b) !important; }
 
 @keyframes fadeUp { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
 @keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-4px)} }
@@ -658,7 +660,7 @@ body { font-family:-apple-system,'Helvetica Neue',sans-serif; background:#000; d
 
     <!-- 頂部 -->
     <div class="home-topbar">
-      <div class="home-stat-pill">🔋 <span id="homePoints">100</span> <span class="home-stat-plus">+</span></div>
+      <div class="home-stat-pill" onclick="showPointsMenu()" title="補充體力">🔋 <span id="homePoints">100</span> <span class="home-stat-plus">+</span></div>
       <div class="home-stat-pill">🪙 <span id="homeCoins">0</span> <span class="home-stat-plus">+</span></div>
       <div class="home-topbar-icons">
         <div class="home-icon-btn" onclick="showCharSwitchPanel()" title="切換角色">👥</div>
@@ -698,7 +700,7 @@ body { font-family:-apple-system,'Helvetica Neue',sans-serif; background:#000; d
 
     <!-- 右側選單 -->
     <div class="home-right" style="top:260px">
-      <div class="home-right-item" onclick="showToast('禮物功能開發中')">
+      <div class="home-right-item" onclick="openGiftPanel()">
         <span class="home-menu-icon">🎁</span>
         <span class="home-menu-label">禮物</span>
       </div>
@@ -820,11 +822,13 @@ body { font-family:-apple-system,'Helvetica Neue',sans-serif; background:#000; d
     </div>
     <div class="chat-messages" id="chatMessages"></div>
     <div class="chat-bottom">
+      <div class="chat-coins-bar">🪙 目前金幣：<span id="chatCoinsDisplay">0</span></div>
       <div class="chat-gifts">
         <button class="gift-btn" onclick="sendGift('花束',50,10)">💐 花束</button>
         <button class="gift-btn" onclick="sendGift('便當',150,20)">🍱 便當</button>
         <button class="gift-btn" onclick="sendGift('蛋糕',150,20)">🎂 蛋糕</button>
         <button class="gift-btn" onclick="sendGift('飾品',400,35)">💍 飾品</button>
+        <button class="gift-btn" onclick="sendGift('限定禮盒',1000,60)">👑 限定禮盒</button>
       </div>
       <div class="chat-input-row">
         <textarea class="chat-input" id="chatInput" placeholder="傳訊息…" rows="1" onkeydown="handleChatKey(event)" oninput="autoResize(this)"></textarea>
@@ -919,6 +923,36 @@ body { font-family:-apple-system,'Helvetica Neue',sans-serif; background:#000; d
       <div class="recharge-icon">👑</div>
       <div class="recharge-info"><div class="recharge-name">至尊體力包</div><div class="recharge-amt">+3200 🔋</div></div>
       <div class="recharge-price">NT$1280</div>
+    </div>
+  </div>
+
+  <!-- 送禮物面板（示意，購買會扣金幣） -->
+  <div id="giftPanel" style="position:absolute;inset:0;background:rgba(0,0,0,0.92);backdrop-filter:blur(16px);z-index:55;display:none;flex-direction:column;padding:60px 20px 40px;gap:10px;overflow-y:auto">
+    <div style="font-size:18px;font-weight:700;color:#fff;text-align:center">🎁 送禮物給<span id="giftPanelCharName">她</span></div>
+    <button style="position:absolute;top:54px;right:20px;background:rgba(255,255,255,0.1);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px" onclick="document.getElementById('giftPanel').style.display='none'">✕</button>
+    <div style="font-size:12px;color:rgba(255,255,255,0.45);text-align:center;margin-bottom:6px">目前金幣：<span id="giftPanelCoins">0</span> 🪙</div>
+
+    <div class="recharge-card" onclick="sendGift('花束',50,10);updateGiftPanelCoins()">
+      <div class="recharge-icon">💐</div>
+      <div class="recharge-info"><div class="recharge-name">小禮物・花束</div><div class="recharge-amt">好感度 +10</div></div>
+      <div class="recharge-price gift-price">50 🪙</div>
+    </div>
+    <div class="recharge-card" onclick="sendGift('蛋糕',150,20);updateGiftPanelCoins()">
+      <div class="recharge-icon">🎂</div>
+      <div class="recharge-info"><div class="recharge-name">普通禮物・蛋糕</div><div class="recharge-amt">好感度 +20</div></div>
+      <div class="recharge-price gift-price">150 🪙</div>
+    </div>
+    <div class="recharge-card" onclick="sendGift('飾品',400,35);updateGiftPanelCoins()">
+      <div class="recharge-tag">人氣</div>
+      <div class="recharge-icon">💍</div>
+      <div class="recharge-info"><div class="recharge-name">高級禮物・飾品</div><div class="recharge-amt">好感度 +35</div></div>
+      <div class="recharge-price gift-price">400 🪙</div>
+    </div>
+    <div class="recharge-card recharge-best" onclick="sendGift('限定禮盒',1000,60);updateGiftPanelCoins()">
+      <div class="recharge-tag recharge-tag-best">頂級・限定款</div>
+      <div class="recharge-icon">👑</div>
+      <div class="recharge-info"><div class="recharge-name">頂級禮物・限定禮盒</div><div class="recharge-amt">好感度 +60</div></div>
+      <div class="recharge-price gift-price">1000 🪙</div>
     </div>
   </div>
 
@@ -1596,6 +1630,19 @@ function purchaseStaminaPack(tierId) {
 }
 
 // ══════════════════════════════
+// 送禮物（示意，購買會扣金幣）
+// ══════════════════════════════
+function openGiftPanel() {
+  document.getElementById('giftPanelCharName').textContent = curCharDef().name;
+  updateGiftPanelCoins();
+  document.getElementById('giftPanel').style.display = 'flex';
+}
+function updateGiftPanelCoins() {
+  const el = document.getElementById('giftPanelCoins');
+  if (el) el.textContent = gs.coins || 0;
+}
+
+// ══════════════════════════════
 // 行動系統
 // ══════════════════════════════
 function goAction() {
@@ -1857,9 +1904,22 @@ function startChat(charKey) {
   const pct=Math.min(100,((c.affection-lv.min)/(lv.max-lv.min+1))*100);
   document.getElementById('chatAffBar').style.width=pct+'%';
   document.getElementById('chatAffScore').textContent=c.affection;
+  updateChatCoinsDisplay();
   document.getElementById('chatMessages').innerHTML='';
   showScreen('chatScreen');
-  setTimeout(()=>addChatMsg('rou',def.name,def.greeting||`${gs.playerName}，你來找我了？`),400);
+  if (c.history && c.history.length) {
+    // 還原之前的對話紀錄（好感度本來就有存，這裡讓畫面上的訊息一起恢復）
+    c.history.forEach(m => {
+      const text = (m.content||'').replace(/\[EMOTION:.*?\]/g,'').trim();
+      if (text) addChatMsg(m.role==='user'?'user':'rou', def.name, text);
+    });
+  } else {
+    setTimeout(()=>addChatMsg('rou',def.name,def.greeting||`${gs.playerName}，你來找我了？`),400);
+  }
+}
+function updateChatCoinsDisplay() {
+  const el = document.getElementById('chatCoinsDisplay');
+  if (el) el.textContent = gs.coins || 0;
 }
 
 function addChatMsg(type,name,text) {
@@ -1912,13 +1972,18 @@ async function sendGift(name,cost,aff) {
   if(gs.isTyping) return;
   if(gs.coins<cost){showToast(`金幣不足！需要 ${cost}🪙`);return;}
   gs.coins-=cost; const applied=addAffection(gs.currentChar,aff);
-  showToast(applied>0?`💕 好感度 +${applied}`:'💕 禮物送出了（今日好感度已達上限）'); addChatMsg('user','',`送了${name} 🎁`);
+  const c=curCharData(); const def=curCharDef();
+  showToast(applied>0?`💕 好感度 +${applied}`:'💕 禮物送出了（今日好感度已達上限）');
+  c.history.push({role:'user',content:`（送了${name}給你 🎁）`});
+  addChatMsg('user','',`送了${name} 🎁`);
+  updateChatCoinsDisplay(); updateGiftPanelCoins();
   gs.isTyping=true; showChatTyping();
   try {
-    let reply=await callAI({apiKey:gs.apiKey,model:'llama-3.3-70b-versatile',max_tokens:150,system:getChatSystemPrompt(),messages:[{role:'user',content:`（${gs.playerName}送了${name}給${curCharDef().name}）`}]});
+    let reply=await callAI({apiKey:gs.apiKey,model:'llama-3.3-70b-versatile',max_tokens:150,system:getChatSystemPrompt(),messages:c.history});
     reply=(reply||'謝謝你…').replace(/\[EMOTION:.*?\]/g,'').trim();
-    hideChatTyping(); addChatMsg('rou',curCharDef().name,reply);
-  } catch { hideChatTyping(); addChatMsg('rou',curCharDef().name,'謝謝你…'); }
+    c.history.push({role:'assistant',content:reply});
+    hideChatTyping(); addChatMsg('rou',def.name,reply);
+  } catch { hideChatTyping(); addChatMsg('rou',def.name,'謝謝你…'); c.history.push({role:'assistant',content:'謝謝你…'}); }
   gs.isTyping=false; save();
 }
 
