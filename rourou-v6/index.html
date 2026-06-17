@@ -4,7 +4,313 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AI 戀愛物語</title>
-<script src="characters.js"></script>
+<script src="characters.js">
+// ══════════════════════════════════════════════════════
+// 劇情系統
+// ══════════════════════════════════════════════════════
+
+const STORY_DATA = {
+  shion: {
+    stages: [
+      {
+        id:'shion_s1', name:'第一階段｜沉默的女孩',
+        affectionRequired:0, location:'aquarium',
+        events:[
+          { id:'shion_s1_meet', isFirstMeet:true,
+            opening:'（水族館角落，一個短髮少女靜靜地盯著水母缸，完全沒注意到你的靠近）',
+            goal:'讓她注意到你',
+            choices:[
+              {text:'「水母很漂亮呢，你也喜歡嗎？」',quality:'good'},
+              {text:'（靜靜站在她旁邊一起看）',quality:'good'},
+            ],
+          },
+          { id:'shion_s1_name',
+            opening:'（你們並排看了一會兒，她突然開口）',
+            goal:'記住彼此的名字',
+            choices:[
+              {text:'「我叫{name}，你呢？」',quality:'good'},
+              {text:'「你常來這裡嗎？」',quality:'neutral'},
+            ],
+          },
+        ],
+      },
+      {
+        id:'shion_s2', name:'第二階段｜只告訴你的秘密',
+        affectionRequired:100, location:'aquarium',
+        events:[
+          { id:'shion_s2_secret',
+            opening:'詩音：「……你知道嗎，水母沒有心臟，也沒有大腦。」（她的聲音比平時多了一點點溫度）',
+            goal:'讓詩音願意多說一些',
+            choices:[
+              {text:'「但牠們還是活著，而且活了幾億年。」',quality:'good'},
+              {text:'「所以牠們不會痛嗎？」',quality:'neutral'},
+            ],
+          },
+          { id:'shion_s2_interest',
+            opening:'詩音：「我在這裡打工。下班後我會留下來……一個人看牠們。」',
+            goal:'讓她繼續說下去',
+            choices:[
+              {text:'「可以讓我陪你嗎？」',quality:'good'},
+              {text:'「為什麼喜歡水母？」',quality:'good'},
+            ],
+          },
+        ],
+      },
+      {
+        id:'shion_s3', name:'第三階段｜另一個我',
+        affectionRequired:300, location:'beach',
+        events:[
+          { id:'shion_s3_contradiction', specialFlag:'shion_dual_hint',
+            opening:'（海邊，詩音突然抓住你的手腕，聲音比平時低沉）「你今天跟別人說話了。」',
+            goal:'安撫她，理解她的情緒',
+            choices:[
+              {text:'「那是朋友，但我現在是來找你的。」',quality:'good'},
+              {text:'「你在生氣嗎？」',quality:'neutral'},
+            ],
+          },
+          { id:'shion_s3_possession', specialFlag:'shion_second_personality_glimpse',
+            opening:'詩音（低著頭）：「……如果你喜歡別人，就不要來找我了。」',
+            goal:'讓她說出心裡的話',
+            choices:[
+              {text:'「我現在喜歡的是你，這樣還不夠嗎？」',quality:'good'},
+              {text:'「詩音，你嫉妒了嗎？」',quality:'neutral'},
+            ],
+          },
+        ],
+      },
+      {
+        id:'shion_s4', name:'第四階段｜別離開我',
+        affectionRequired:600, location:'bar',
+        events:[
+          { id:'shion_s4_reveal', specialFlag:'shion_past_trauma',
+            opening:'（酒吧昏黃燈光下，詩音語氣突然換了）「嘿，你怕我嗎？」',
+            goal:'不要逃避，正面面對她',
+            choices:[
+              {text:'「不怕。我想認識你所有的面貌。」',quality:'good'},
+              {text:'「……你現在是詩音嗎？」',quality:'neutral'},
+            ],
+          },
+          { id:'shion_s4_trauma',
+            opening:'詩音（聲音沉重）：「……小時候，我媽說我是怪孩子。說我的眼睛裡住著惡魔。」',
+            goal:'讓她知道你接受她',
+            choices:[
+              {text:'「那個「惡魔」保護了你，我覺得她很厲害。」',quality:'good'},
+              {text:'「你媽媽說的不對。」',quality:'neutral'},
+            ],
+          },
+        ],
+      },
+      {
+        id:'shion_s5', name:'第五階段｜唯一',
+        affectionRequired:1000, location:'aquarium', isFinal:true,
+        events:[
+          { id:'shion_s5_truth', triggerEnding:true,
+            opening:'詩音（水族館閉館後，只有你和她）：「……其實『她』是我為了保護自己創造出來的。當我害怕的時候，她會替我出面。但現在……我不確定我們是不是同一個人了。」',
+            goal:'幫助詩音面對自己',
+            choices:[
+              {text:'「你是誰並不重要，重要的是你現在在這裡。」',quality:'good'},
+              {text:'「你願意讓我認識那個她嗎？」',quality:'good'},
+            ],
+          },
+        ],
+        endings:{
+          trueEnd:   {id:'shion_true',   emoji:'💖', title:'完整的妳',   condition:1200, text:'「謝謝你願意認識真正的我。」\n\n兩個人格逐漸不再對立，而是共存。\n詩音第一次覺得，做自己是安全的。'},
+          coDepEnd:  {id:'shion_codep',  emoji:'🌙', title:'只有你',     condition:800,  text:'「只要有你就夠了。」\n\n詩音把世界縮小到只剩你。'},
+          hiddenEnd: {id:'shion_hidden', emoji:'✨', title:'唯一人格',   condition:'flags', text:'「從今天開始，我只想做我自己。」\n\n兩個人格最終融合。'},
+        },
+      },
+    ],
+  },
+
+  hina: {
+    stages: [
+      {
+        id:'hina_s1', name:'第一階段｜挑戰開始',
+        affectionRequired:0, location:'arcade',
+        events:[
+          { id:'hina_s1_meet', isFirstMeet:true,
+            opening:'「嘿！你要玩這台嗎？」（一個金髮少女用充滿鬥志的眼神看著你）「不行！這台是我的！我要破紀錄！」',
+            goal:'讓陽菜對你感興趣',
+            choices:[
+              {text:'「那我們比一場怎麼樣？」',quality:'good'},
+              {text:'「你玩了多久了？」',quality:'neutral'},
+            ],
+          },
+        ],
+      },
+      {
+        id:'hina_s2', name:'第二階段｜最佳搭檔',
+        affectionRequired:100, location:'arcade',
+        events:[
+          { id:'hina_s2_partner',
+            opening:'陽菜：「等等……你要不要試試合作模式？我一個人挑戰這關一直失敗！」（第一次露出沮喪的表情）',
+            goal:'建立合作關係',
+            choices:[
+              {text:'「好啊，我負責左邊，你負責右邊。」',quality:'good'},
+              {text:'「你想讓我幫你？」',quality:'neutral'},
+            ],
+          },
+        ],
+      },
+      {
+        id:'hina_s3', name:'第三階段｜奇怪的心情',
+        affectionRequired:300, location:'beach',
+        events:[
+          { id:'hina_s3_jealous', specialFlag:'hina_realize_feelings',
+            opening:'（陽菜盯著你和路過的人說話，等對方離開後跑過來）「嘿！那個人是誰！」',
+            goal:'讓她意識到自己的感情',
+            choices:[
+              {text:'「陽菜……你吃醋了嗎？」',quality:'good'},
+              {text:'「只是路人，怎麼了？」',quality:'neutral'},
+            ],
+          },
+        ],
+      },
+      {
+        id:'hina_s4', name:'第四階段｜你覺得我們像情侶嗎？',
+        affectionRequired:600, location:'aquarium',
+        events:[
+          { id:'hina_s4_confession',
+            opening:'（陽菜盯著魚缸，突然小聲問）「……{name}，你覺得我們……像情侶嗎？」',
+            goal:'回應她的心意',
+            choices:[
+              {text:'「如果你願意的話，我想讓我們真的成為情侶。」',quality:'good'},
+              {text:'「你希望我們像嗎？」',quality:'neutral'},
+            ],
+          },
+        ],
+      },
+      {
+        id:'hina_s5', name:'第五階段｜夢想的彼方',
+        affectionRequired:1000, location:'bar', isFinal:true,
+        events:[
+          { id:'hina_s5_dream', triggerEnding:true,
+            opening:'陽菜（拿著一封信，聲音有點顫抖）：「……我收到了。海外創作邀約。我一直夢想的機會。」（她看著你）「但是……」',
+            goal:'支持她做出選擇',
+            choices:[
+              {text:'「去吧。我支持你。我們會想辦法的。」',quality:'good'},
+              {text:'「你想去嗎？說說你的想法。」',quality:'good'},
+            ],
+          },
+        ],
+        endings:{
+          trueEnd:    {id:'hina_true',     emoji:'💖', title:'一起出發',   condition:1200, text:'「有你在，我什麼都不怕。」\n\n兩人一起收拾行李，走向新的城市。'},
+          distanceEnd:{id:'hina_distance', emoji:'✈️', title:'彼方的約定', condition:800,  text:'「等我變得更厲害，再回來見你。」\n\n陽菜獨自登機。手機裡還開著視訊。'},
+          stayEnd:    {id:'hina_stay',     emoji:'🌅', title:'留在身邊',   condition:'flags', text:'「夢想可以慢慢追，但你只有一個。」\n\n她把邀請函放回信封，轉身笑著說：帶我去所有你去過的地方。'},
+        },
+      },
+    ],
+  },
+};
+
+// 取得角色當前劇情階段
+function getCharStory(charKey) {
+  return STORY_DATA[charKey] || null;
+}
+
+function getCurrentStage(charKey) {
+  const story = getCharStory(charKey);
+  if (!story) return null;
+  const c = gs.chars[charKey];
+  const aff = c.affection;
+  const flags = c.storyFlags || [];
+  // 從最高階段往下找符合條件的
+  const stages = [...story.stages].reverse();
+  for (const stage of stages) {
+    if (aff >= stage.affectionRequired) return stage;
+  }
+  return story.stages[0];
+}
+
+function getNextStoryEvent(charKey) {
+  const stage = getCurrentStage(charKey);
+  if (!stage) return null;
+  const c = gs.chars[charKey];
+  const doneEvents = c.doneStoryEvents || [];
+  // 找第一個還沒觸發過的事件
+  for (const ev of stage.events) {
+    if (!doneEvents.includes(ev.id)) return { stage, event: ev };
+  }
+  return null;
+}
+
+function markStoryEventDone(charKey, eventId, flags) {
+  const c = gs.chars[charKey];
+  if (!c.doneStoryEvents) c.doneStoryEvents = [];
+  if (!c.storyFlags) c.storyFlags = [];
+  if (!c.doneStoryEvents.includes(eventId)) c.doneStoryEvents.push(eventId);
+  if (flags) c.storyFlags.push(...[].concat(flags));
+  save();
+}
+
+// 觸發劇情事件（在 generateEvent 中呼叫）
+function tryTriggerStoryEvent(loc, charKey) {
+  const story = getCharStory(charKey);
+  if (!story) return null;
+
+  const next = getNextStoryEvent(charKey);
+  if (!next) return null;
+
+  const { stage, event } = next;
+  // 確認場所符合
+  if (stage.location && stage.location !== loc.id) return null;
+
+  return { stage, event };
+}
+
+// 顯示結局
+function showEnding(charKey, stage) {
+  const c = gs.chars[charKey];
+  const aff = c.affection;
+  const flags = c.storyFlags || [];
+  const endings = stage.endings;
+  if (!endings) return;
+
+  let ending = null;
+  // 判斷觸發哪個結局
+  if (aff >= 1200) ending = endings.trueEnd;
+  else if (aff >= 800) ending = endings.coDepEnd || endings.distanceEnd;
+  // 隱藏結局：需要所有特殊旗標
+  const allFlags = Object.keys(STORY_DATA[charKey]?.stages || {})
+    .flatMap(k => STORY_DATA[charKey].stages[k]?.events || [])
+    .map(e => e.specialFlag).filter(Boolean);
+  if (allFlags.every(f => flags.includes(f))) ending = endings.hiddenEnd || endings.stayEnd;
+
+  if (!ending) ending = endings.trueEnd || Object.values(endings)[0];
+  if (!ending) return;
+
+  c.cleared = true;
+  save();
+
+  // 顯示結局畫面
+  showEndingScreen(ending, charKey);
+}
+
+function showEndingScreen(ending, charKey) {
+  const def = CHARACTERS[charKey];
+  // 用 event screen 顯示結局
+  document.getElementById('eventSprite').src = def.imagePath + 'daily.png';
+  document.getElementById('eventSprite').style.display = '';
+  document.getElementById('eventLocBadge').textContent = ending.emoji + ' ' + ending.title;
+  document.getElementById('eventAffBadge').textContent = '攻略完成';
+  document.getElementById('eventMessages').innerHTML = '';
+
+  const lines = ending.text.split('\n');
+  lines.forEach((line, i) => {
+    setTimeout(() => {
+      addEventMsg('rou', def.name, line || '　');
+    }, i * 600);
+  });
+
+  setTimeout(() => {
+    document.getElementById('eventContinueBtn').style.display = 'block';
+    document.getElementById('eventContinueBtn').textContent = '🌸 進入長期陪伴模式';
+  }, lines.length * 600 + 500);
+
+  showScreen('eventScreen');
+}
+
+</script>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
 body { font-family:-apple-system,'Helvetica Neue',sans-serif; background:#000; display:flex; justify-content:center; align-items:center; min-height:100vh; }
@@ -1159,6 +1465,23 @@ async function generateEvent(loc, charKey) {
   const def=CHARACTERS[charKey]; const c=gs.chars[charKey]; const period=PERIODS[gs.currentPeriod];
   const isFirstMeet=c.affection===0&&c.history.length===0;
   gs.currentEvent={ loc, charKey, phase:'dialog', rounds:0, maxRounds:3+Math.floor(Math.random()*3), goal:'', dialogHistory:[], opening:'', totalDelta:0 };
+
+  // 優先嘗試觸發劇情事件
+  const storyTrigger = tryTriggerStoryEvent(loc, charKey);
+  if (storyTrigger) {
+    const { stage, event } = storyTrigger;
+    const opening = event.opening.replace(/{name}/g, gs.playerName);
+    const choices = event.choices.map(ch => ({...ch, text: ch.text.replace(/{name}/g, gs.playerName)}));
+    gs.currentEvent.goal = event.goal;
+    gs.currentEvent.opening = opening;
+    gs.currentEvent.storyEventId = event.id;
+    gs.currentEvent.storyStage = stage;
+    gs.currentEvent.specialFlag = event.specialFlag;
+    gs.currentEvent.triggerEnding = event.triggerEnding;
+    gs.currentEvent.dialogHistory.push({role:'assistant', content:opening});
+    renderEventWithGoal({goal:event.goal, opening, choices}, charKey);
+    return;
+  }
   const prompt=`你是遊戲設計師，設計AI女友養成遊戲的相遇事件。場景：${loc.name}，時段：${period.name}，角色：${def.name}（${def.personality.split('\n')[0]}），玩家稱呼：${gs.playerName}，好感度：${c.affection}，是否初次相遇：${isFirstMeet}。設計相遇情境，JSON格式：{"goal":"目標","opening":"開場白","choices":[{"text":"選項A","quality":"good"},{"text":"選項B","quality":"neutral"}]}，只回傳JSON，不要emoji。`;
   try {
     const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({apiKey:gs.apiKey,model:'llama-3.3-70b-versatile',max_tokens:300,system:'你是遊戲設計師，只回傳JSON，不要markdown，不要emoji。',messages:[{role:'user',content:prompt}]})});
@@ -1240,6 +1563,13 @@ async function handleEventDialog(playerText,quality,charKey,overrideDelta) {
     if(isLastRound){
       const success=ev.totalDelta>=10;
       if(success){c.affection=Math.min(9999,c.affection+20);showToast('🎯 目標達成！額外 +20好感');}
+      // 劇情旗標記錄
+      if(ev.storyEventId) markStoryEventDone(charKey, ev.storyEventId, ev.specialFlag);
+      // 結局觸發
+      if(ev.triggerEnding && ev.storyStage){
+        setTimeout(()=>showEnding(charKey, ev.storyStage), 1200);
+        return;
+      }
       document.getElementById('eventContinueBtn').style.display='block';
       document.getElementById('eventContinueBtn').textContent=success?'達成目標，離開 ✓':'結束對話，離開';
     } else { await generateNextChoices(charKey,reply); }
