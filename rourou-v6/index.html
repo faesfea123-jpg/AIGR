@@ -537,6 +537,11 @@ body { font-family:-apple-system,'Helvetica Neue',sans-serif; background:#000; d
 /* 小遊戲 */
 #gameSelectPanel { position:absolute; inset:0; background:rgba(0,0,0,0.88); backdrop-filter:blur(16px); z-index:50; display:none; flex-direction:column; padding:60px 20px 40px; gap:12px; }
 
+/* 老虎機（消除連線式） */
+.cluster-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:6px; }
+.cluster-cell { aspect-ratio:1; background:rgba(255,255,255,0.08); border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:22px; border:1px solid rgba(255,255,255,0.08); transition:background 0.2s,transform 0.2s; }
+.cluster-cell.matched { background:rgba(244,114,182,0.35); border-color:rgba(244,114,182,0.6); transform:scale(1.08); }
+
 /* 老虎機 */
 #slotScreen { background:#0a0a14; flex-direction:column; align-items:center; justify-content:flex-start; padding:52px 24px 32px; gap:0; }
 
@@ -845,7 +850,7 @@ body { font-family:-apple-system,'Helvetica Neue',sans-serif; background:#000; d
     <button style="position:absolute;top:54px;right:20px;background:rgba(255,255,255,0.1);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px" onclick="document.getElementById('gameSelectPanel').style.display='none'">✕</button>
     <div onclick="startSlotMachine()" style="display:flex;align-items:center;gap:16px;background:rgba(255,255,255,0.07);border:0.5px solid rgba(255,255,255,0.15);border-radius:16px;padding:20px;cursor:pointer;margin-top:8px">
       <div style="font-size:40px">🎰</div>
-      <div><div style="font-size:16px;font-weight:700;color:#fff">老虎機</div><div style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:4px">每次消耗 10🪙</div></div>
+      <div><div style="font-size:16px;font-weight:700;color:#fff">老虎機</div><div style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:4px">消除連線式，每次消耗 10🔋</div></div>
     </div>
     <div onclick="startCatchGame()" style="display:flex;align-items:center;gap:16px;background:rgba(255,255,255,0.07);border:0.5px solid rgba(255,255,255,0.15);border-radius:16px;padding:20px;cursor:pointer">
       <div style="font-size:40px">🛒</div>
@@ -998,31 +1003,27 @@ body { font-family:-apple-system,'Helvetica Neue',sans-serif; background:#000; d
   </div>
 
   <!-- 老虎機 -->
-  <div class="screen" id="slotScreen" style="background:#0a0a14;flex-direction:column;align-items:center;justify-content:flex-start;padding:52px 24px 32px;gap:0">
-    <div style="display:flex;justify-content:space-between;align-items:center;width:100%;margin-bottom:24px">
+  <div class="screen" id="slotScreen" style="background:#0a0a14;flex-direction:column;align-items:center;justify-content:flex-start;padding:52px 24px 32px;gap:0;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;width:100%;margin-bottom:16px">
       <button class="back-btn" onclick="showScreen('homeScreen')">←</button>
       <div style="font-size:18px;font-weight:700;color:#fff">🎰 老虎機</div>
       <div style="font-size:12px;color:#fda4af">🪙 <span id="slotCoins">0</span></div>
     </div>
-    <div style="background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.12);border-radius:24px;padding:32px 24px;width:100%;margin-bottom:24px">
-      <div style="display:flex;gap:12px;justify-content:center;margin-bottom:24px">
-        <div style="width:80px;height:100px;background:rgba(255,255,255,0.08);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:44px;border:2px solid rgba(255,255,255,0.1)" id="reel0">🍒</div>
-        <div style="width:80px;height:100px;background:rgba(255,255,255,0.08);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:44px;border:2px solid rgba(255,255,255,0.1)" id="reel1">🍋</div>
-        <div style="width:80px;height:100px;background:rgba(255,255,255,0.08);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:44px;border:2px solid rgba(255,255,255,0.1)" id="reel2">⭐</div>
-      </div>
-      <div style="text-align:center;font-size:14px;color:rgba(255,255,255,0.5);min-height:20px" id="slotResult"></div>
+    <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-bottom:12px" id="slotDailyCap">今日已贏 0 / 150 🪙</div>
+    <div style="background:rgba(255,255,255,0.05);border:0.5px solid rgba(255,255,255,0.12);border-radius:24px;padding:16px;width:100%;margin-bottom:16px">
+      <div class="cluster-grid" id="clusterGrid"></div>
+      <div style="text-align:center;font-size:14px;color:rgba(255,255,255,0.5);min-height:20px;margin-top:14px" id="slotResult"></div>
     </div>
-    <div style="width:100%;background:rgba(255,255,255,0.03);border-radius:16px;padding:16px;margin-bottom:24px">
-      <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-bottom:8px">獎項說明</div>
+    <div style="width:100%;background:rgba(255,255,255,0.03);border-radius:16px;padding:16px;margin-bottom:20px">
+      <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-bottom:8px">玩法說明</div>
       <div style="display:flex;flex-direction:column;gap:6px;font-size:12px;color:rgba(255,255,255,0.7)">
-        <div>💎💎💎 → <span style="color:#fda4af">+100🪙 +60🔋 大獎</span></div>
-        <div>⭐⭐⭐ → <span style="color:#fda4af">+60🪙 +40🔋</span></div>
-        <div>任意三連 → <span style="color:#fda4af">+30🪙 +20🔋</span></div>
-        <div>兩連 → <span style="color:#fda4af">+15🪙 +10🔋</span></div>
-        <div>沒中 → <span style="color:rgba(255,255,255,0.4)">+5🔋</span></div>
+        <div>同圖案連成5格以上（上下左右相連）即可消除得分，連得越多賠率越高</div>
+        <div>消除後上方掉落新圖案，若再次連成5格會持續連鎖，倍率每輪+1（最高x5）</div>
+        <div>💐2　🍱3　🎂5　💍10　👑20　❤️萬用（可代替任何圖案）</div>
+        <div style="color:#fda4af">單次旋轉最高 80🪙，每日最高可贏 150🪙</div>
       </div>
     </div>
-    <button id="slotSpinBtn" onclick="spinSlot()" style="width:100%;background:linear-gradient(135deg,#e879f9,#f472b6);border:none;border-radius:14px;padding:16px;color:#fff;font-size:16px;font-weight:700;cursor:pointer">旋轉（消耗 10🪙）</button>
+    <button id="slotSpinBtn" onclick="spinSlot()" style="width:100%;background:linear-gradient(135deg,#e879f9,#f472b6);border:none;border-radius:14px;padding:16px;color:#fff;font-size:16px;font-weight:700;cursor:pointer">旋轉（消耗 10🔋）</button>
     <div style="font-size:11px;color:rgba(255,255,255,0.3);margin-top:12px" id="slotTotalWin"></div>
   </div>
 
@@ -1092,6 +1093,21 @@ const RECHARGE_TIERS = {
   deluxe:  { price:650,  amount:1400, label:'豪華體力包' },
   supreme: { price:1280, amount:3200, label:'至尊體力包' },
 };
+// 老虎機（消除連線式，靈感參考ELK Studios等廠商的cluster-pay slot玩法）
+const CLUSTER_GRID = 5;          // 5x5棋盤
+const CLUSTER_MIN_MATCH = 5;     // 至少連成5格才算中獎
+const CLUSTER_MAX_CASCADES = 5;  // 一次spin最多連鎖幾輪
+const CLUSTER_SPIN_COST = 10;    // 每次spin消耗體力
+const CLUSTER_SPIN_CAP = 80;     // 單次spin最高入帳金幣（對齊GDD「金幣範圍30-80」）
+const CLUSTER_DAILY_CAP = 150;   // 老虎機每日最高可贏金幣
+const CLUSTER_SYMBOLS = [
+  { id:'a',    icon:'💐', weight:30, pay:2  },
+  { id:'b',    icon:'🍱', weight:25, pay:3  },
+  { id:'c',    icon:'🎂', weight:20, pay:5  },
+  { id:'d',    icon:'💍', weight:13, pay:10 },
+  { id:'e',    icon:'👑', weight:7,  pay:20 },
+  { id:'wild', icon:'❤️', weight:5,  pay:20 },
+];
 const PERIOD_ORDER = ['morning','noon','afternoon','night'];
 const PERIODS = {
   morning:   { name:'早上', icon:'🌅', points:20 },
@@ -1127,6 +1143,7 @@ let gs = {
   currentChar:'kanon',      // 目前主介面顯示的角色（世界線）
   charSelectIdx:0,          // 角色選擇畫面的索引
   todaySpend:0, todayPackPurchases:{},  // 課金保護：當日儲值金額 / 各檔次當日購買次數
+  slotWinToday:0,                       // 老虎機保護：當日已贏得金幣
   chars:{
     kanon:  { affection:0, outfit:'daily', history:[], memory:[], emotions:[], dialogsToday:0, affGainToday:0, affCapNotified:false, met:true,  cleared:false },
     shion:  { affection:0, outfit:'daily', history:[], memory:[], emotions:[], dialogsToday:0, affGainToday:0, affCapNotified:false, met:false, cleared:false },
@@ -1168,6 +1185,7 @@ function resetDailyCounters() {
   Object.values(gs.chars).forEach(c => { c.dialogsToday = 0; c.affGainToday = 0; c.affCapNotified = false; });
   gs.todaySpend = 0;
   gs.todayPackPurchases = {};
+  gs.slotWinToday = 0;
 }
 
 // ══════════════════════════════
@@ -1992,36 +2010,158 @@ async function sendGift(name,cost,aff) {
 // ══════════════════════════════
 function showGameSelect() { document.getElementById('gameSelectPanel').style.display='flex'; }
 
-const SLOT_SYMBOLS=['🍒','🍋','🍊','⭐','💎','🍇'];
-let slotSpinning=false, slotTotalWin=0;
-function startSlotMachine() { document.getElementById('gameSelectPanel').style.display='none'; slotTotalWin=0; document.getElementById('slotCoins').textContent=gs.coins; document.getElementById('slotResult').textContent=''; document.getElementById('slotTotalWin').textContent=''; showScreen('slotScreen'); }
-async function spinSlot() {
-  if(slotSpinning) return;
-  if(gs.coins<10){showToast('金幣不足！需要 10🪙');return;}
-  gs.coins-=10; document.getElementById('slotCoins').textContent=gs.coins; save();
-  slotSpinning=true; const btn=document.getElementById('slotSpinBtn'); btn.disabled=true; btn.textContent='旋轉中…'; document.getElementById('slotResult').textContent='';
-  let frames=0; const maxFrames=20;
-  const interval=setInterval(()=>{ ['reel0','reel1','reel2'].forEach(id=>{ document.getElementById(id).textContent=SLOT_SYMBOLS[Math.floor(Math.random()*SLOT_SYMBOLS.length)]; }); frames++; if(frames>=maxFrames){clearInterval(interval);showSlotResult();} },80);
+const wait = (ms) => new Promise(r => setTimeout(r, ms));
+
+function clusterPickSymbol() {
+  const total = CLUSTER_SYMBOLS.reduce((s,x) => s + x.weight, 0);
+  let r = Math.random() * total;
+  for (const sym of CLUSTER_SYMBOLS) { if (r < sym.weight) return sym.id; r -= sym.weight; }
+  return CLUSTER_SYMBOLS[0].id;
 }
-function showSlotResult() {
-  const rand=Math.random(); let r0,r1,r2;
-  if(rand<0.03){r0=r1=r2='💎';}
-  else if(rand<0.08){r0=r1=r2='⭐';}
-  else if(rand<0.18){const s=SLOT_SYMBOLS[Math.floor(Math.random()*SLOT_SYMBOLS.length)];r0=r1=r2=s;}
-  else if(rand<0.38){const s=SLOT_SYMBOLS[Math.floor(Math.random()*SLOT_SYMBOLS.length)];const diff=SLOT_SYMBOLS.filter(x=>x!==s);r0=r1=s;r2=diff[Math.floor(Math.random()*diff.length)];if(Math.random()<0.5){r0=r2;r2=s;}}
-  else{const used=new Set();const pick=()=>{let s;do{s=SLOT_SYMBOLS[Math.floor(Math.random()*SLOT_SYMBOLS.length)];}while(used.has(s));used.add(s);return s;};r0=pick();r1=pick();r2=pick();}
-  document.getElementById('reel0').textContent=r0; document.getElementById('reel1').textContent=r1; document.getElementById('reel2').textContent=r2;
-  let coins=0,points=0,msg='';
-  if(r0===r1&&r1===r2){if(r0==='💎'){coins=100;points=60;msg='💎 大獎！三鑽石！';}else if(r0==='⭐'){coins=60;points=40;msg='⭐ 三星星！';}else{coins=30;points=20;msg=`${r0} 三連！`;}}
-  else if(r0===r1||r1===r2||r0===r2){coins=15;points=10;msg='二連，小獎！';}
-  else{points=5;msg='沒中，安慰獎 +5🔋';}
-  const triple=r0===r1&&r1===r2;
-  ['reel0','reel1','reel2'].forEach(id=>document.getElementById(id).style.background=triple?'rgba(244,114,182,0.2)':'rgba(255,255,255,0.08)');
-  if(coins>0)gs.coins+=coins; if(points>0)gs.points=Math.min(200,(gs.points||0)+points); slotTotalWin+=coins;
+function clusterSymbolInfo(id) { return CLUSTER_SYMBOLS.find(s => s.id === id) || CLUSTER_SYMBOLS[0]; }
+function clusterGenGrid() {
+  const grid = [];
+  for (let r = 0; r < CLUSTER_GRID; r++) { const row = []; for (let c = 0; c < CLUSTER_GRID; c++) row.push(clusterPickSymbol()); grid.push(row); }
+  return grid;
+}
+// 找出所有「連成5格以上」的同色（含愛心萬用）區塊，較高賠率的圖案優先搶愛心格
+function clusterFindClusters(grid) {
+  const n = CLUSTER_GRID;
+  const claimed = Array.from({length:n}, () => Array(n).fill(false));
+  const clusters = [];
+  const realSymbols = [...CLUSTER_SYMBOLS].filter(s => s.id !== 'wild').sort((a,b) => b.pay - a.pay).map(s => s.id);
+  function bfs(symId, sr, sc, visited) {
+    const queue = [[sr,sc]]; visited[sr][sc] = true; const region = [];
+    while (queue.length) {
+      const [cr,cc] = queue.shift(); region.push([cr,cc]);
+      const neighbors = [[cr-1,cc],[cr+1,cc],[cr,cc-1],[cr,cc+1]];
+      for (const [nr,nc] of neighbors) {
+        if (nr<0||nr>=n||nc<0||nc>=n||visited[nr][nc]||claimed[nr][nc]) continue;
+        const ns = grid[nr][nc];
+        if (ns === symId || ns === 'wild') { visited[nr][nc] = true; queue.push([nr,nc]); }
+      }
+    }
+    return region;
+  }
+  for (const symId of realSymbols) {
+    const visited = Array.from({length:n}, () => Array(n).fill(false));
+    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
+      if (visited[r][c] || claimed[r][c]) continue;
+      const cell = grid[r][c];
+      if (cell !== symId && cell !== 'wild') { visited[r][c] = true; continue; }
+      const region = bfs(symId, r, c, visited);
+      const hasReal = region.some(([rr,cc]) => grid[rr][cc] === symId);
+      if (region.length >= CLUSTER_MIN_MATCH && hasReal) {
+        region.forEach(([rr,cc]) => claimed[rr][cc] = true);
+        clusters.push({ symbolId: symId, cells: region });
+      }
+    }
+  }
+  // 剩餘沒被認領、純愛心連成一片的也算一個特殊大獎區塊
+  const visitedWild = Array.from({length:n}, () => Array(n).fill(false));
+  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
+    if (visitedWild[r][c] || claimed[r][c] || grid[r][c] !== 'wild') continue;
+    const region = bfs('wild', r, c, visitedWild);
+    if (region.length >= CLUSTER_MIN_MATCH) { region.forEach(([rr,cc]) => claimed[rr][cc] = true); clusters.push({ symbolId:'wild', cells:region }); }
+  }
+  return clusters;
+}
+function clusterPayFor(symbolId, size) {
+  const base = clusterSymbolInfo(symbolId).pay;
+  return Math.round(base * (1 + (size - CLUSTER_MIN_MATCH) * 0.5));
+}
+function clusterRenderGrid(grid, matchedCells) {
+  const matched = new Set((matchedCells||[]).map(([r,c]) => r+'-'+c));
+  const el = document.getElementById('clusterGrid');
+  if (!el) return;
+  el.innerHTML = '';
+  for (let r = 0; r < CLUSTER_GRID; r++) for (let c = 0; c < CLUSTER_GRID; c++) {
+    const cell = document.createElement('div');
+    cell.className = 'cluster-cell' + (matched.has(r+'-'+c) ? ' matched' : '');
+    cell.textContent = grid[r][c] ? clusterSymbolInfo(grid[r][c]).icon : '';
+    el.appendChild(cell);
+  }
+}
+function updateSlotCapUI() {
+  const remaining = Math.max(0, CLUSTER_DAILY_CAP - (gs.slotWinToday||0));
+  const capEl = document.getElementById('slotDailyCap');
+  if (capEl) capEl.textContent = `今日已贏 ${gs.slotWinToday||0} / ${CLUSTER_DAILY_CAP} 🪙`;
+  const btn = document.getElementById('slotSpinBtn');
+  if (btn && !slotSpinning) {
+    if (remaining <= 0) { btn.disabled = true; btn.textContent = '今日獎金已達上限，明天再來'; }
+    else { btn.disabled = false; btn.textContent = `旋轉（消耗 ${CLUSTER_SPIN_COST}🔋）`; }
+  }
+}
+
+let slotSpinning=false, slotTotalWin=0;
+function startSlotMachine() {
+  document.getElementById('gameSelectPanel').style.display='none';
+  slotTotalWin=0; slotSpinning=false;
   document.getElementById('slotCoins').textContent=gs.coins;
-  document.getElementById('slotResult').textContent=msg+(coins>0?` +${coins}🪙`:'')+(points>0?` +${points}🔋`:'');
-  document.getElementById('slotTotalWin').textContent=slotTotalWin>0?`本次累計贏得 ${slotTotalWin}🪙`:'';
-  const btn=document.getElementById('slotSpinBtn'); btn.disabled=false; btn.textContent='旋轉（消耗 10🪙）'; slotSpinning=false; save();
+  document.getElementById('slotResult').textContent='';
+  document.getElementById('slotTotalWin').textContent='';
+  clusterRenderGrid(clusterGenGrid(), []);
+  updateSlotCapUI();
+  showScreen('slotScreen');
+}
+async function spinSlot() {
+  if (slotSpinning) return;
+  if ((gs.slotWinToday||0) >= CLUSTER_DAILY_CAP) { showToast('🎰 今日老虎機獎金已達上限，明天再來！'); return; }
+  if (!usePoints(CLUSTER_SPIN_COST)) { showToast(`體力不足！需要 ${CLUSTER_SPIN_COST}🔋`); return; }
+  document.getElementById('slotCoins').textContent = gs.coins;
+  slotSpinning = true;
+  const btn = document.getElementById('slotSpinBtn'); btn.disabled = true; btn.textContent = '旋轉中…';
+  document.getElementById('slotResult').textContent = '';
+
+  // 洗牌動畫（純視覺，不影響結果）
+  let grid = clusterGenGrid();
+  for (let i = 0; i < 6; i++) { clusterRenderGrid(clusterGenGrid(), []); await wait(70); }
+  clusterRenderGrid(grid, []);
+  await wait(250);
+
+  let totalWin = 0, multiplier = 1, cascades = 0, msg = '';
+  while (cascades < CLUSTER_MAX_CASCADES) {
+    const clusters = clusterFindClusters(grid);
+    if (!clusters.length) break;
+    const matchedCells = clusters.flatMap(cl => cl.cells);
+    clusterRenderGrid(grid, matchedCells); // 高亮中獎格
+    let stepWin = 0;
+    clusters.forEach(cl => stepWin += clusterPayFor(cl.symbolId, cl.cells.length));
+    stepWin *= multiplier;
+    totalWin += stepWin;
+    await wait(450);
+    // 移除中獎格，套用重力下墜，補新圖案
+    matchedCells.forEach(([r,c]) => grid[r][c] = null);
+    for (let c = 0; c < CLUSTER_GRID; c++) {
+      const colVals = [];
+      for (let r = 0; r < CLUSTER_GRID; r++) if (grid[r][c]) colVals.push(grid[r][c]);
+      while (colVals.length < CLUSTER_GRID) colVals.unshift(clusterPickSymbol());
+      for (let r = 0; r < CLUSTER_GRID; r++) grid[r][c] = colVals[r];
+    }
+    cascades++;
+    multiplier = Math.min(5, multiplier + 1);
+    clusterRenderGrid(grid, []);
+    await wait(350);
+  }
+
+  totalWin = Math.min(CLUSTER_SPIN_CAP, totalWin);
+  const remaining = Math.max(0, CLUSTER_DAILY_CAP - (gs.slotWinToday||0));
+  const credited = Math.min(totalWin, remaining);
+  gs.slotWinToday = (gs.slotWinToday||0) + credited;
+  gs.coins += credited;
+  slotTotalWin += credited;
+
+  if (credited <= 0) msg = '沒有連線，再接再厲！';
+  else if (cascades >= 2) msg = `🎉 ${cascades}連鎖！x${multiplier-1} 倍率！`;
+  else msg = '🎰 中獎了！';
+  if (totalWin > credited) msg += `（今日上限關係，本次只入帳 ${credited}🪙）`;
+
+  document.getElementById('slotCoins').textContent = gs.coins;
+  document.getElementById('slotResult').textContent = msg + (credited>0?` +${credited}🪙`:'');
+  document.getElementById('slotTotalWin').textContent = slotTotalWin>0?`本次累計贏得 ${slotTotalWin}🪙`:'';
+  slotSpinning = false;
+  updateSlotCapUI();
+  save();
 }
 
 let catchTimer=null, catchAnimFrame=null, catchGameState=null;
